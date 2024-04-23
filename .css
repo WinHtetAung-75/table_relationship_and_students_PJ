@@ -1172,10 +1172,6 @@ input:checked + .toggle-bg {
   z-index: 50;
 }
 
-.float-start {
-  float: inline-start;
-}
-
 .mx-1 {
   margin-left: 0.25rem;
   margin-right: 0.25rem;

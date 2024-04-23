@@ -1,13 +1,43 @@
 <?php include("./template/header.php") ?>
+<?php
+$countSql = "SELECT COUNT(id) AS total_students FROM students";
+
+$sql = "SELECT *,students.id AS student_id,students.name AS student_name FROM students LEFT JOIN courses ON courses.id = students.course_id LEFT JOIN batches ON batches.id = students.batch_id";
+
+
+//for search
+if (isset($_GET['q'])) {
+    $q = $_GET['q'];
+    $sql .= " WHERE students.name LIKE '%$q%'";
+    $countSql .= " WHERE students.name LIKE '%$q%'";
+}
+
+$countQuery = mysqli_query($connect, $countSql);
+$total_students = mysqli_fetch_assoc($countQuery);
+// print_r($total_students);
+
+//for pagination
+$total_records = $total_students['total_students'];
+$student_per_page = 3;
+$total_page = ceil($total_records / $student_per_page);
+$current_page = isset($_GET['page']) ? $_GET['page'] : 1;
+
+//to show data of each page we think with offset
+$offset = ($current_page - 1) * $student_per_page;
+
+$sql .= " ORDER BY students.id DESC LIMIT $offset,$student_per_page";
+$query = mysqli_query($connect, $sql);
+// var_dump($query);
+?>
 <!-- Breadcrumb -->
 <nav class="flex" aria-label="Breadcrumb">
     <ol class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
         <li class="inline-flex items-center">
             <a href="./index.php" class="inline-flex gap-2 items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V13.5Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V18Zm2.498-6.75h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V13.5Zm0 2.25h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V18Zm2.504-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5Zm0 2.25h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V18Zm2.498-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5ZM8.25 6h7.5v2.25h-7.5V6ZM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0 0 12 2.25Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
                 </svg>
-                Student Lists
+                Student Create
             </a>
         </li>
         <li>
@@ -17,11 +47,53 @@
                 </svg>
             </div>
         </li>
+        <li class="inline-flex items-center">
+            <a href="" class="inline-flex gap-2 items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                </svg>
+                Student Lists
+            </a>
+        </li>
     </ol>
 </nav>
-<div class="flex justify-end">
-    <a href="./index.php" class="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">Add New Student</a>
+
+<div class=" mt-5 flex justify-between items-center">
+    <div class="">
+        <a href="./index.php" class="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">Add New Student</a>
+    </div>
+
+    <div class=" flex justify-end">
+        <form action="./studentLists.php" method="get">
+            <label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                    </svg>
+                </div>
+                <input type="search" id="default-search" name="q" value="<?= isset($_GET['q']) ? $_GET['q'] : '' ?>" class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search.." required />
+                <button type="submit" class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-3 py-1.5 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Search</button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<div class=" mt-5 flex justify-end">
+    <p class=" text-end inline-block bg-gray-700 px-2 py-1 text-gray-200 rounded-md">
+        Showing Results (<?= $total_students['total_students'] ?>) Students
+    </p>
+</div>
+
+<?php
+// print_r($_GET['q']);
+if (isset($_GET['q'])) :
+?>
+    <div class=" mt-5 flex gap-2 justify-end">
+        <p class=" bg-gray-700 px-2 py-1 text-gray-200 rounded-md">Search By Student Name "<?= $_GET['q'] ?>"</p>
+        <a class="bg-red-600 px-2 py-1 rounded-md text-red-200 " href="./studentLists.php">Clear</a>
+    </div>
+<?php endif ?>
 
 <div class=" mt-10 relative overflow-x-auto shadow-md sm:rounded-lg">
     <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
@@ -50,10 +122,8 @@
                 </th>
             </tr>
         </thead>
+
         <?php
-        $sql = "SELECT *,students.id AS student_id,students.name AS student_name FROM students LEFT JOIN courses ON courses.id = students.course_id LEFT JOIN batches ON batches.id = students.batch_id";
-        $query = mysqli_query($connect, $sql);
-        // var_dump($query);
         while ($row = mysqli_fetch_assoc($query)) :
             // print_r($row);
         ?>
@@ -72,12 +142,12 @@
                         <?= $row["fee"] ?>
                     </td>
                     <td class="px-6 py-4">
-                        <?= date("d M Y",strtotime($row["start_date"] ))?>
+                        <?= date("d M Y", strtotime($row["start_date"])) ?>
                     </td>
                     <td class="px-6 py-4">
-                        <?= date("gA",strtotime($row["start_time"])) ?>
+                        <?= date("gA", strtotime($row["start_time"])) ?>
                         <br>
-                        <?= date("gA",strtotime($row["end_time"])) ?>
+                        <?= date("gA", strtotime($row["end_time"])) ?>
                     </td>
                     <td class="px-6 py-4">
                         <div class="inline-flex rounded-md shadow-sm" role="group">
@@ -97,4 +167,36 @@
                 </tr>
             </tbody>
         <?php endwhile ?>
+        <?php if ($query->num_rows === 0) : ?>
+            <tr>
+                <td class=" px-6 py-4 text-center font-bold text-3xl " colspan="6">There Is No Student With The Name "<?= $_GET['q'] ?>"</td>
+            </tr>
+        <?php endif ?>
     </table>
+</div>
+
+<nav class=" mt-5" aria-label="Page navigation example">
+    <ul class="inline-flex -space-x-px text-sm">
+        <?php if ($current_page - 1 > 0) : ?>
+            <li>
+                <a href="./studentLists.php?page=<?= $current_page - 1 ?>&<?= isset($_GET['q']) ? 'q=' . $_GET['q'] : '' ?>" class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">Previous</a>
+            </li>
+        <?php endif ?>
+        <?php
+        //looping three page next and previous
+        $start = $current_page > 3 ? $current_page - 3 : 1;
+        $end = $current_page + 3 < $total_page ? $current_page + 3 : $total_page;
+
+        for ($i = $start; $i <= $end; $i++) :
+        ?>
+            <li>
+                <a href="./studentLists.php?page=<?= $i ?>&<?= isset($_GET['q']) ? 'q=' . $_GET['q'] : '' ?>" class="<?= $i == $current_page ? ' bg-blue-700 text-blue-100 hover:bg-blue-700 hover:text-blue-100 ' : '' ?>flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"><?= $i ?></a>
+            </li>
+        <?php endfor ?>
+        <?php if ($current_page + 1 <= $total_page) : ?>
+            <li>
+                <a href="./studentLists.php?page=<?= $current_page + 1 ?>&<?= isset($_GET['q']) ? 'q=' . $_GET['q'] : '' ?>" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">Next</a>
+            </li>
+        <?php endif ?>
+    </ul>
+</nav>
